@@ -7,10 +7,15 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  req.user = { _id: '6383216b5148354f391d2335' };
+  next();
+});
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
 app.use('/users', require('./routes/users'));
+app.use('/cards', require('./routes/cards'));
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
