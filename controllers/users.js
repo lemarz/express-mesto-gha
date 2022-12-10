@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const Users = require('../models/user');
 const ErrorNotFound = require('../errors/ErrorNotFound');
+const { getJwtToken } = require('../utils/jwt');
 
 module.exports.getUsers = (req, res) => {
   Users.find({})
@@ -90,4 +91,20 @@ module.exports.updateAvatar = (req, res) => {
       }
       return res.status(500).send({ message: 'Ошибка по-умолчанию.' });
     });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+
+  return Users.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = getJwtToken(user._id);
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+        sameSite: true,
+      });
+      res.status(201).send({ message: 'Авторизация успешна', token });
+    })
+    .catch((err) => res.status(401).send({ message: err.message }));
 };
