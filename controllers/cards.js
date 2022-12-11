@@ -68,11 +68,18 @@ module.exports.disLikeCard = (req, res) => {
 };
 
 module.exports.deleteCard = (req, res) => {
-  Cards.findByIdAndRemove(req.params.cardId)
+  Cards.findById(req.params.cardId)
     .orFail(() => {
       throw new ErrorNotFound('Передан несуществующий _id карточки.');
     })
-    .then((card) => res.send({ data: card }))
+    .then((card) => {
+      if (req.user._id !== card.owner.toString()) {
+        return res.status(500).send({ message: 'Вы не можете удалять чужие карточки.' });
+      }
+      return String(card._id);
+    })
+    .then((id) => Cards.findByIdAndRemove(id))
+    .then((cardToRemove) => res.send({ data: cardToRemove }))
     .catch((err) => {
       if (err.name === 'CastError') {
         return res.status(400).send({ message: 'Переданы некорректные данные.' });
