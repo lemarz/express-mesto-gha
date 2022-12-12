@@ -6,6 +6,7 @@ const auth = require('./middlewares/auth');
 
 const notFound = require('./middlewares/notFound');
 const { createUser, login } = require('./controllers/users');
+const { errorHandler } = require('./middlewares/errorHandler');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -24,6 +25,7 @@ app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
 app.use(notFound);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

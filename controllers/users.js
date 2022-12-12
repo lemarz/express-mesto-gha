@@ -1,15 +1,17 @@
 const bcrypt = require('bcrypt');
 const Users = require('../models/user');
 const ErrorNotFound = require('../errors/ErrorNotFound');
+const ErrorBadRequest = require('../errors/ErrorBadRequest');
+const ErrorNotUniqueEmail = require('../errors/ErrorNotUniqueEmail');
 const { getJwtToken } = require('../utils/jwt');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   Users.find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(500).send({ message: 'Ошибка по-умолчанию.' }));
+    .catch((err) => next(err));
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const {
     name, about, avatar, email,
   } = req.body;
@@ -21,13 +23,16 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при создании' });
+        next(new ErrorBadRequest('Переданы некорректные данные.'));
+      } else if (err.code === 11000) {
+        next(new ErrorNotUniqueEmail('Такой пользователь уже существует'));
+      } else {
+        next(err);
       }
-      return res.status(500).send({ message: 'Ошибка по умолчанию.' });
     });
 };
 
-module.exports.getUserId = (req, res) => {
+module.exports.getUserId = (req, res, next) => {
   Users.findById(req.params.userId)
     .orFail(() => {
       throw new ErrorNotFound('Пользователь по указанному _id не найден.');
@@ -35,16 +40,14 @@ module.exports.getUserId = (req, res) => {
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные' });
+        next(new ErrorBadRequest('Переданы некорректные данные'));
+      } else {
+        next(err);
       }
-      if (err.statusCode === 404) {
-        return res.status(404).send({ message: err.errorMessage });
-      }
-      return res.status(500).send({ message: 'Ошибка по-умолчанию' });
     });
 };
 
-module.exports.getUserMe = (req, res) => {
+module.exports.getUserMe = (req, res, next) => {
   const { _id } = req.user;
   Users.findById(_id)
     .orFail(() => {
@@ -53,13 +56,14 @@ module.exports.getUserMe = (req, res) => {
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные' });
+        next(new ErrorBadRequest('Переданы некорректные данные'));
+      } else {
+        next(err);
       }
-      return res.status(500).send({ message: 'Ошибка по-умолчанию' });
     });
 };
 
-module.exports.updateUserInfo = (req, res) => {
+module.exports.updateUserInfo = (req, res, next) => {
   const { name, about } = req.body;
   Users.findByIdAndUpdate(
     req.user._id,
@@ -75,16 +79,14 @@ module.exports.updateUserInfo = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении профиля.' });
+        next(new ErrorBadRequest('Переданы некорректные данные'));
+      } else {
+        next(err);
       }
-      if (err.statusCode === 404) {
-        return res.status(404).send({ message: err.errorMessage });
-      }
-      return res.status(500).send({ message: 'Ошибка по-умолчанию.' });
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   Users.findByIdAndUpdate(
     req.user._id,
     { avatar: req.body.avatar },
@@ -99,16 +101,14 @@ module.exports.updateAvatar = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении профиля.' });
+        next(new ErrorBadRequest('Переданы некорректные данные'));
+      } else {
+        next(err);
       }
-      if (err.statusCode === 404) {
-        return res.status(404).send({ message: err.errorMessage });
-      }
-      return res.status(500).send({ message: 'Ошибка по-умолчанию.' });
     });
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   return Users.findUserByCredentials(email, password)
@@ -121,5 +121,5 @@ module.exports.login = (req, res) => {
       });
       res.status(201).send({ message: 'Авторизация успешна', token });
     })
-    .catch((err) => res.status(401).send({ message: err.message }));
+    .catch((err) => next(err));
 };
