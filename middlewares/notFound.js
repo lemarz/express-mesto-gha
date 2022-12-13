@@ -1,6 +1,7 @@
+const ErrorNotFound = require('../errors/ErrorNotFound');
+
 const notFound = (req, res, next) => {
-  res.status(404).send({ message: 'Данный путь не найден' });
-  next();
+  next(new ErrorNotFound('Данный путь не найден'));
 };
 
 module.exports = notFound;

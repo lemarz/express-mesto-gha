@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const {
   avatarJoiValidator,
-  userIdJoiValidator,
+  idJoiValidator,
   userJoiValidator,
 } = require('../middlewares/joiValidator');
 
@@ -18,7 +18,7 @@ router.get('/', getUsers);
 
 router.get('/me', getUserMe);
 
-router.get('/:userId', userIdJoiValidator('userId'), getUserId);
+router.get('/:userId', idJoiValidator('userId'), getUserId);
 
 router.patch('/me', userJoiValidator, updateUserInfo);
 

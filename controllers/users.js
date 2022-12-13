@@ -20,7 +20,15 @@ module.exports.createUser = (req, res, next) => {
     .then((hash) => Users.create({
       name, about, avatar, email, password: hash,
     }))
-    .then((user) => res.send({ data: user }))
+    .then((user) => res.send({
+      data: {
+        name: user.name,
+        avatar: user.avatar,
+        about: user.about,
+        email: user.email,
+        _id: user._id,
+      },
+    }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new ErrorBadRequest('Переданы некорректные данные.'));
@@ -119,7 +127,7 @@ module.exports.login = (req, res, next) => {
         httpOnly: true,
         sameSite: true,
       });
-      res.status(201).send({ message: 'Авторизация успешна', token });
+      res.status(200).send({ message: 'Авторизация успешна', token });
     })
     .catch((err) => next(err));
 };
