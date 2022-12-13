@@ -1,4 +1,11 @@
 const router = require('express').Router();
+
+const {
+  avatarJoiValidator,
+  userIdJoiValidator,
+  userJoiValidator,
+} = require('../middlewares/joiValidator');
+
 const {
   getUsers,
   getUserId,
@@ -11,10 +18,10 @@ router.get('/', getUsers);
 
 router.get('/me', getUserMe);
 
-router.get('/:userId', getUserId);
+router.get('/:userId', userIdJoiValidator('userId'), getUserId);
 
-router.patch('/me', updateUserInfo);
+router.patch('/me', userJoiValidator, updateUserInfo);
 
-router.patch('/me/avatar', updateAvatar);
+router.patch('/me/avatar', avatarJoiValidator, updateAvatar);
 
 module.exports = router;
